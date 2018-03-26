@@ -1,0 +1,28 @@
+﻿<Window x:Class="Youtube_DL_UserInterface.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Youtube_DL_UserInterface"
+        mc:Ignorable="d"
+        Title="Youtube Downloader" Height="384" Width="722" ResizeMode="CanMinimize">
+    <Grid Margin="0,22,4,-3">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="0*"/>
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="txtYoutubeDLLocation" Height="46" Margin="176,0,22,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <Button x:Name="btnChooseYoutubeDLLocation" Content="Choose Tool Location" HorizontalAlignment="Left" Margin="24,14,0,0" VerticalAlignment="Top" Width="137" Height="26" Click="btnChooseYoutubeDLLocation_Click"/>
+        <Button x:Name="btnDownloadUpdates" Content="Download Updates" HorizontalAlignment="Left" Margin="24,75,0,0" VerticalAlignment="Top" Width="137" Height="26" Click="btnDownloadUpdates_Click"/>
+        <Label x:Name="label1" Content="Number of Parallel Downloads :" HorizontalAlignment="Left" Margin="248,217,0,0" VerticalAlignment="Top" Height="26" Width="176"/>
+        <Label x:Name="label2" Content="Latest Version : " HorizontalAlignment="Left" Margin="176,75,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.368,-0.808" Height="26" Width="91"/>
+        <RadioButton x:Name="radioMultiThreaded" Content="Download Videos Parallely ( Enable if you have Fast Internet )" HorizontalAlignment="Left" Margin="244,191,0,0" VerticalAlignment="Top" Height="15" Width="341" Checked="radioMultiThreaded_Checked" Unchecked="radioMultiThreaded_UnChecked"/>
+        <RadioButton x:Name="radioSingleThreaded" Content="Download Videos Serially ( Enable if you have Slow/Moderate Internet )" HorizontalAlignment="Left" Margin="244,161,0,0" VerticalAlignment="Top" Height="15" Width="396" IsChecked="True"/>
+        <Button x:Name="btnDownloadLatest" Content="Update" HorizontalAlignment="Left" Margin="608,75,0,0" VerticalAlignment="Top" Width="82" Height="26" Click="btnDownloadLatest_Click" Visibility="Hidden"/>
+        <Button x:Name="btnDownload" Content="Start Download !!" HorizontalAlignment="Left" Margin="244,275,0,0" VerticalAlignment="Top" Width="144" Height="40" Click="btnDownload_Click"/>
+        <TextBox x:Name="txtVideoList" HorizontalAlignment="Left" Height="183" Margin="24,132,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="202" AcceptsReturn="True" AcceptsTab="True"/>
+        <Label x:Name="lblLatestVersion" Content="N/A" HorizontalAlignment="Left" Margin="267,75,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.132,-0.192" Width="334" Height="26"/>
+        <TextBox x:Name="txtNumberParallelDownloads" HorizontalAlignment="Left" Height="23" Margin="429,221,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" IsEnabled="False" Text="2"/>
+
+    </Grid>
+</Window>
