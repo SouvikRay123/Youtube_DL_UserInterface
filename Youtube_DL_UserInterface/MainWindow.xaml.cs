@@ -1,13 +1,9 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using Youtube_DL_Helper;
 
@@ -47,9 +43,11 @@ namespace Youtube_DL_UserInterface
 
         private void btnChooseYoutubeDLLocation_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.InitialDirectory = _currentDirectory;
-            openFileDialog.Filter = "Exe files (*.exe)|*.exe";
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                InitialDirectory = _currentDirectory,
+                Filter = "Exe files (*.exe)|*.exe"
+            };
             if (openFileDialog.ShowDialog() == true)
                 txtYoutubeDLLocation.Text = openFileDialog.FileName;
         }
@@ -114,11 +112,34 @@ namespace Youtube_DL_UserInterface
                 }
 
                 arguements = @"-o " + _downloadHelper.GetOutputDirectoryArguement(_currentDirectory, folder) + " " + videoURL;
-                _downloadHelper.PrepareThreadPool(arguements, folder, true);
+                _downloadHelper.PrepareThreadPool(arguements, folder);
             }
 
-            _downloadHelper.StartDownloads(null, _downloadHelper.GetThreadPool());
+            Thread th = new Thread(new ThreadStart(() => _downloadHelper.StartDownloads(null, _downloadHelper.GetThreadPool())
+                ));
+            th.Start();
             //_downloadHelper = null;
+        }
+
+        private void btnStopDownload_Click(object sender, RoutedEventArgs e)
+        {
+            SetDownloadHelperObject();
+            _downloadHelper.StopDownloads();
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            try
+            {
+                SetDownloadHelperObject();
+                _downloadHelper.StopDownloads();
+                _downloadHelper.WriteOutputToFile(DownloadHelperConstants.logFileType, _downloadHelper.GetConsolidatedLogs());
+                base.OnClosing(e);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Exception\n" + ex.Message);
+            }
         }
 
 
@@ -134,18 +155,18 @@ namespace Youtube_DL_UserInterface
         public void SetDownloadHelperObject()
         {
             bool isMultiThreadEnabled = radioMultiThreaded.IsChecked ?? false;
-            short numberOfParallelDownloads = 1;
-            Int16.TryParse(txtNumberParallelDownloads.Text, out numberOfParallelDownloads);
+            Int16.TryParse(txtNumberParallelDownloads.Text, out short numberOfParallelDownloads);
 
             if (_downloadHelper != null)
             {
-                _downloadHelper.SetCurrentDirectory(_currentDirectory);
-                _downloadHelper.SetProcessLocation(txtYoutubeDLLocation.Text);
-                _downloadHelper.SetNumberOfParallelDownloads(numberOfParallelDownloads);
-                _downloadHelper.SetIsMultiThreaded(isMultiThreadEnabled);
+                _downloadHelper.CurrentDirectory = _currentDirectory;
+                _downloadHelper.ProcessLocation = txtYoutubeDLLocation.Text;
+                _downloadHelper.NumberOfParallelDownloads = numberOfParallelDownloads;
+                _downloadHelper.IsMultithreadingDownloadEnabled = isMultiThreadEnabled;
+                _downloadHelper.HideProcessWindow = chkboxHideProcessWindow.IsChecked ?? false;
             }
             else
-                _downloadHelper = new DownloadHelper(_currentDirectory , txtYoutubeDLLocation.Text , numberOfParallelDownloads, isMultiThreadEnabled);
+                _downloadHelper = new DownloadHelper(_currentDirectory , txtYoutubeDLLocation.Text , numberOfParallelDownloads, isMultiThreadEnabled , chkboxHideProcessWindow.IsChecked ?? false);
         }
     }
 }

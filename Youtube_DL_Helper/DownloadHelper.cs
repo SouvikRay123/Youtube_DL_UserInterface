@@ -15,54 +15,56 @@ namespace Youtube_DL_Helper
         #region Private Variables
 
         private List<Action> _threadPool = new List<Action>();
-        private ConcurrentBag<StringBuilder> _logs = new ConcurrentBag<StringBuilder>();
+        private ConcurrentBag<StringBuilder> _logs = new ConcurrentBag<StringBuilder>();                
+        public CancellationTokenSource CancellationTokenSource = new CancellationTokenSource(); 
+        
+        public string CurrentDirectory {
+            private get; set;
+        }
 
-        private string _currentDirectory = "";
         private short _numberOfParallelDownloads = 1;
-        private bool _isMultithreadingDownloadEnabled = false;
-        private string _processLocation = "";
+        public short NumberOfParallelDownloads
+        {
+            private get { return this._numberOfParallelDownloads; }
+            set { this._numberOfParallelDownloads = value; }
+        }
+        
+        public bool IsMultithreadingDownloadEnabled
+        {
+            private get; set;
+        }
+        
+        public string ProcessLocation
+        {
+            private get; set;
+        }
+        
+        public bool HideProcessWindow
+        {
+            private get; set;
+        }
 
         #endregion
 
+        public DownloadHelper(string currentDirectory, string processLocation, short noOfParallelDownloads, bool isMultiThreaded , bool hideProcessWindow)
+        {
+            this.CurrentDirectory = currentDirectory;
+            this.ProcessLocation = processLocation;
+            this.NumberOfParallelDownloads = noOfParallelDownloads;
+            this.IsMultithreadingDownloadEnabled = isMultiThreaded;
+            this.HideProcessWindow = hideProcessWindow;
+        }
+
+        
         public List<Action> GetThreadPool()
         {
             return this._threadPool;
         }
 
-
-        public DownloadHelper(string currentDirectory, string processLocation, short noOfParallelDownloads, bool isMultiThreaded)
-        {
-            SetCurrentDirectory(currentDirectory);
-            SetProcessLocation(processLocation);
-            SetNumberOfParallelDownloads(noOfParallelDownloads);
-            SetIsMultiThreaded(isMultiThreaded);
-        }
-
-
-        public void SetCurrentDirectory(string currentDirectory)
-        {
-            this._currentDirectory = currentDirectory;
-        }
-
-        public void SetProcessLocation(string processLocation)
-        {
-            this._processLocation = processLocation;
-        }
-
-        public void SetNumberOfParallelDownloads(short noOfParallelDownloads)
-        {
-            this._numberOfParallelDownloads = noOfParallelDownloads;
-        }
-
-        public void SetIsMultiThreaded(bool isMultiThreaded)
-        {
-            this._isMultithreadingDownloadEnabled = isMultiThreaded;
-        }
-
         public void GetCurrentVersion(string processLocation)
         {
             string arguements = "--version";
-            PrepareThreadPool(arguements, DownloadHelperConstants.currentVersionDownload , true);
+            PrepareThreadPool(arguements, DownloadHelperConstants.currentVersionDownload);
             StartDownloads(null, _threadPool);
         }
 
@@ -79,11 +81,11 @@ namespace Youtube_DL_Helper
             }
         }
 
-        public void PrepareThreadPool(string arguements, string downloadType, bool hideProcessWindow = true)
+        public void PrepareThreadPool(string arguements, string downloadType)
         {
             try
             {
-                Process myProcess = CreateProcess(arguements, downloadType, false);
+                Process myProcess = CreateProcess(arguements, downloadType);
 
                 _threadPool.Add(new Action(delegate ()
                 {
@@ -140,45 +142,79 @@ namespace Youtube_DL_Helper
         {
             if (action != null)
             {
-                Parallel.For(0, 1, task => action.Invoke());
+                Parallel.For(0, 1, new ParallelOptions
+                {
+                    CancellationToken = CancellationTokenSource.Token,
+                    MaxDegreeOfParallelism = 1
+                } , task => action.Invoke());
             }
             else
             {
-                if (!_isMultithreadingDownloadEnabled)
-                    _numberOfParallelDownloads = 1;
-                Parallel.ForEach(actions, new ParallelOptions() { MaxDegreeOfParallelism = _numberOfParallelDownloads }, task =>
-                {
-                    task.Invoke();
-                });
+                if (!IsMultithreadingDownloadEnabled)
+                    NumberOfParallelDownloads = 1;
+                StartParallelTasks(actions);
             }
 
+            string consolidatedLog = GetConsolidatedLogs();
+
+            WriteOutputToFile(DownloadHelperConstants.logFileType, consolidatedLog);
+        }
+
+        public string GetConsolidatedLogs()
+        {
             string consolidatedLog = "";
             foreach (StringBuilder log in _logs)
             {
                 consolidatedLog += log + "\n\n";
             }
 
-            WriteOutputToFile(DownloadHelperConstants.logFileType, consolidatedLog);
+            return consolidatedLog;
         }
 
-        private Process CreateProcess(string arguements, string downloadType, bool hideProcessWindow = true)
+        private Process CreateProcess(string arguements, string downloadType)
         {
             Process myProcess = new Process();
-
-            myProcess.StartInfo.FileName = _processLocation;
+            myProcess.StartInfo.FileName = ProcessLocation;
             myProcess.StartInfo.UseShellExecute = false;
             myProcess.StartInfo.RedirectStandardOutput = true;
             myProcess.StartInfo.Arguments = arguements;
             myProcess.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
-            if(hideProcessWindow)
-                myProcess.StartInfo.CreateNoWindow = hideProcessWindow;
+            if(HideProcessWindow)
+                myProcess.StartInfo.CreateNoWindow = HideProcessWindow;
 
             return myProcess;
+        }
+
+        private void StartParallelTasks(List<Action> actions)
+        {
+            ParallelOptions po = new ParallelOptions
+            {
+                CancellationToken = CancellationTokenSource.Token,
+                MaxDegreeOfParallelism = NumberOfParallelDownloads
+            };
+
+            try
+            {
+                Parallel.ForEach(actions, po, task =>
+                {
+                    task.Invoke();
+                    //po.CancellationToken.ThrowIfCancellationRequested();
+                });
+            }
+            catch (Exception ex)
+            {
+                _logs.Add(new StringBuilder("Download Was Cancelled"));
+            }
         }
 
         private void ClearLogs()
         {
             _logs = new ConcurrentBag<StringBuilder>();
+        }
+
+        public void StopDownloads()
+        {
+            CancellationTokenSource.Cancel();            
         }
 
         public void StartProcessAndWriteStatus(Process myProcess, string downloadType)
@@ -200,7 +236,7 @@ namespace Youtube_DL_Helper
         {
             string arguements = "--update";
 
-            Process downloadUpdateProcess = CreateProcess(arguements , DownloadHelperConstants.latestVersionDownload, true);
+            Process downloadUpdateProcess = CreateProcess(arguements , DownloadHelperConstants.latestVersionDownload);
             StartProcessAndWriteStatus(downloadUpdateProcess, DownloadHelperConstants.latestVersionDownload);
 
             string output = "";
@@ -225,6 +261,7 @@ namespace Youtube_DL_Helper
                 {
                     sw.WriteLine(content);
                 }
+                ClearLogs();
             }
             catch (Exception ex)
             {

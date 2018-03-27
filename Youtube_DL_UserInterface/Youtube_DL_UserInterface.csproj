@@ -103,9 +103,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Icon\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Resource Include="favicon.ico" />
   </ItemGroup>
@@ -114,6 +112,9 @@
       <Project>{9293eeb6-dd53-4209-943b-4df5b7bf8ab1}</Project>
       <Name>Youtube_DL_Helper</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icon\favicon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
