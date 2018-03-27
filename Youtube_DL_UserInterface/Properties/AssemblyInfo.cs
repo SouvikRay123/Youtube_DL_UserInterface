@@ -8,9 +8,9 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Video Downloader")]
-[assembly: AssemblyDescription("Simple app to download videos using youtube-dl")]
+[assembly: AssemblyDescription("Simple app to download videos using youtube-dl by rg3")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Souvik_Sinha_Ray")]
+[assembly: AssemblyCompany("Souvik Sinha Ray")]
 [assembly: AssemblyProduct("Video Downloader")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
